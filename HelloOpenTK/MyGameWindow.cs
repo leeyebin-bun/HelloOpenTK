@@ -1,5 +1,6 @@
 ﻿using System;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -10,24 +11,11 @@ namespace HelloOpenTK
 	{
         public MyGameWindow(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title }) { }
 
-
         Vertex[] vertices = {
-            new Vertex(-0.5f, -0.5f, 0.0f), //Bottom-left vertex
-            new Vertex(0.5f, -0.5f, 0.0f), //Bottom-right vertex
-            new Vertex(-0.5f,  0.5f, 0.0f),  //Top-left vertex
-        };
-        
-        Vertex[] vertices_2 = {
-            new Vertex(-0.5f, 0.5f, 0.0f), //top-left vertex
-            new Vertex(0.5f, 0.5f, 0.0f), //top-right vertex
-            new Vertex(0.5f, -0.5f, 0.0f), //bottom-right vertex
-        };
-
-        Vertex[] vertices_3 = {
-            new Vertex(-0.5f, 0.5f, 0.0f), //top-left vertex
-            new Vertex(0.5f, 0.5f, 0.0f), //top-right vertex
-            new Vertex(0.5f, -0.5f, 0.0f), //bottom-right vertex
-            new Vertex(-0.5f, -0.5f, 0.0f), //Bottom-left vertex
+            new Vertex(-1.0f, 1.0f, 0.0f), //top-left vertex
+            new Vertex(1.0f, 1.0f, 0.0f), //top-right vertex
+            new Vertex(1.0f, -1.0f, 0.0f), //bottom-right vertex
+            new Vertex(-1.0f, -1.0f, 0.0f), //Bottom-left vertex
         };
 
         uint[] indices =
@@ -38,31 +26,65 @@ namespace HelloOpenTK
 
         Shader shader;
 
-        Triangle t1;
-        Triangle t2;
-
         int ElementBufferObject;
         int VertexBufferObject;
         int VertexArrayObject;
+        float speed = 1.5f;
+
+        Vector3 position = new Vector3(0.0f, 0.0f, -3.0f);
+        Vector3 front = new Vector3(0.0f, 0.0f, 1.0f);
+        Vector3 up = new Vector3(0.0f, 1.0f, 0.0f);
+
+       
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             base.OnUpdateFrame(e);
 
+            if (!IsFocused) // check to see if the window is focused
+            {
+                return;
+            }
+
             if (KeyboardState.IsKeyDown(Keys.Escape))
             {
                 Close();
             }
+
+            KeyboardState input = KeyboardState;//...
+            if (input.IsKeyDown(Keys.W))
+            {
+                position += front * speed * (float)e.Time; //Forward 
+            }
+            if (input.IsKeyDown(Keys.S))
+            {
+                position -= front * speed * (float)e.Time; //Backwards
+            }
+            if (input.IsKeyDown(Keys.A))
+            {
+                position -= Vector3.Normalize(Vector3.Cross(front, up)) * speed * (float)e.Time; //Left
+            }
+            if (input.IsKeyDown(Keys.D))
+            {
+                position += Vector3.Normalize(Vector3.Cross(front, up)) * speed * (float)e.Time; //Right
+            }
+            if (input.IsKeyDown(Keys.Space))
+            {
+                position += up * speed * (float)e.Time; //Up 
+            }
+            if (input.IsKeyDown(Keys.LeftShift))
+            {
+                position -= up * speed * (float)e.Time; //Down
+            }
+
+           
         }
 
         protected override void OnLoad()
         {
             base.OnLoad();
+            GL.Enable(EnableCap.DepthTest);
             GL.ClearColor(0.2f, 0.2f, 0.2f, 1.0f);//Code goes here
-
-            //t1 = new Triangle(vertices[0], vertices[1], vertices[2]);
-            //t2 = new Triangle(vertices_2[0], vertices_2[1], vertices_2[2]);
-
 
             //////////////////////////////////////////////////////////
             /// VBO (Vertex Buffer Object)
@@ -71,7 +93,7 @@ namespace HelloOpenTK
             // 생성한 Buffer를 어떤 특성(ArrayBuffer)으로 선택
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
             // 선택한 Buffer에 데이터를 보내기
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices_3.Length * sizeof(float) * 3, vertices_3, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float) * 3, vertices, BufferUsageHint.StaticDraw);
 
             /////////////////////////////////////////////////////////
             /// VAO (Vertex Array Object)
@@ -101,24 +123,29 @@ namespace HelloOpenTK
 
             shader = new Shader(vertexPath, fragmentPath);
 
-            
+           
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
-            GL.Clear(ClearBufferMask.ColorBufferBit);//Code goes here.
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);//Code goes here.
 
             shader.Use();
+
+            Matrix4 model = Matrix4.CreateRotationX(MathHelper.DegreesToRadians(0.0f));
+            Matrix4 view = Matrix4.LookAt(position, position + front, up);//카메라 위치
+            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), (float)Size.X / (float)Size.Y, 0.1f, 100.0f);
+
+            shader.SetMatrix4("model", model);
+            shader.SetMatrix4("view", view);
+            shader.SetMatrix4("projection", projection);
 
             GL.BindVertexArray(VertexArrayObject);
         
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
 
             GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
-
-            //t1.Draw();
-            //t2.Draw();
 
             SwapBuffers();
         }
