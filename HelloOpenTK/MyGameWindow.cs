@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -30,12 +31,16 @@ namespace HelloOpenTK
         int VertexBufferObject;
         int VertexArrayObject;
         float speed = 1.5f;
+        float pitch = 0.0f;
+        float yaw = 90.0f;
+        float cameraSensitivity = 0.1f;
 
         Vector3 position = new Vector3(0.0f, 0.0f, -3.0f);
         Vector3 front = new Vector3(0.0f, 0.0f, 1.0f);
         Vector3 up = new Vector3(0.0f, 1.0f, 0.0f);
+        Vector2 lastMousePos;
+        bool FirstMove = true;
 
-       
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
@@ -52,6 +57,7 @@ namespace HelloOpenTK
             }
 
             KeyboardState input = KeyboardState;//...
+
             if (input.IsKeyDown(Keys.W))
             {
                 position += front * speed * (float)e.Time; //Forward 
@@ -80,11 +86,44 @@ namespace HelloOpenTK
            
         }
 
+        protected override void OnMouseMove(MouseMoveEventArgs e)
+        {
+            if(!MouseState.IsButtonDown(MouseButton.Right))
+            {
+                return;
+            }
+
+            float deltaX = e.DeltaX;
+            float deltaY = e.DeltaY;
+
+            if (pitch > 89.0f)
+            {
+                pitch = 89.0f;
+            }
+            else if (pitch < -89.0f)
+            {
+                pitch = -89.0f;
+            }
+            else
+            {
+                pitch -= deltaY * cameraSensitivity;
+            }
+
+            yaw += deltaX * cameraSensitivity;
+
+            front.X = (float)Math.Cos(MathHelper.DegreesToRadians(pitch)) * (float)Math.Cos(MathHelper.DegreesToRadians(yaw));
+            front.Y = (float)Math.Sin(MathHelper.DegreesToRadians(pitch));
+            front.Z = (float)Math.Cos(MathHelper.DegreesToRadians(pitch)) * (float)Math.Sin(MathHelper.DegreesToRadians(yaw));
+            front = Vector3.Normalize(front);
+
+        }
+
         protected override void OnLoad()
         {
             base.OnLoad();
             GL.Enable(EnableCap.DepthTest);
             GL.ClearColor(0.2f, 0.2f, 0.2f, 1.0f);//Code goes here
+
 
             //////////////////////////////////////////////////////////
             /// VBO (Vertex Buffer Object)
