@@ -5,6 +5,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using static System.Net.WebRequestMethods;
 
 namespace HelloOpenTK
 {
@@ -13,22 +14,18 @@ namespace HelloOpenTK
         public MyGameWindow(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title }) { }
 
         Vertex[] vertices = {
-            //Front
-            new Vertex(-1.0f, -1.0f, -1.0f ,1.0f), //top-left vertex
-            new Vertex(1.0f, -1.0f, -1.0f ,1.0f), //top-right vertex
-            new Vertex(1.0f, 1.0f, -1.0f ,1.0f), //bottom-right vertex
-            new Vertex(-1.0f, 1.0f, -1.0f ,1.0f), //Bottom-left vertex
-           
+
+            new Vertex(-1.0f, 1.0f, 0.0f), //top-left vertex
+            new Vertex(1.0f, 1.0f, 0.0f), //top-right vertex
+            new Vertex(1.0f, -1.0f, 0.0f), //bottom-right vertex
+            new Vertex(-1.0f, -1.0f, 0.0f), //Bottom-left vertex      
         };
 
         uint[] indices =
         {
-            0, 1, 3, 3, 1, 2, 
-            1, 2, 4 ,4, 2, 5,
-            2 ,3, 5, 5, 3, 6,
-            0 , 1, 7, 1, 7, 4,
-            0 ,3 , 7, 3, 7, 6,
-            7, 6, 4, 6, 4, 5, 
+            0,1,2,
+            0,2,3,
+            2,3,1,
         };
 
         Shader shader;
